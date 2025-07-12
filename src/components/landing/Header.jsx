@@ -1,8 +1,8 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Shield } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { DialogTrigger } from '@/components/ui/dialog';
+import React from "react";
+import { motion } from "framer-motion";
+import { Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DialogTrigger } from "@/components/ui/dialog";
 
 const Header = () => {
   return (
@@ -16,7 +16,9 @@ const Header = () => {
             transition={{ duration: 0.5 }}
           >
             <Shield className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold text-foreground">PlagiarismGuard</span>
+            <span className="text-xl font-bold text-foreground">
+              Plagiarism Detector
+            </span>
           </motion.div>
 
           <motion.div
@@ -25,9 +27,7 @@ const Header = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <DialogTrigger asChild>
-              <Button>
-                Get Started
-              </Button>
+              <Button>Get Started</Button>
             </DialogTrigger>
           </motion.div>
         </div>

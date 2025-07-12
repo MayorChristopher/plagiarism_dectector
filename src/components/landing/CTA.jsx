@@ -1,7 +1,7 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { DialogTrigger } from '@/components/ui/dialog';
+import React from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { DialogTrigger } from "@/components/ui/dialog";
 
 const CTA = () => {
   return (
@@ -17,12 +17,11 @@ const CTA = () => {
             Ready to Get Started?
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
-            Join thousands of professionals who trust PlagiarismGuard for their content integrity needs.
+            Join thousands of professionals who trust Plagiarism Detector for
+            their content integrity needs.
           </p>
           <DialogTrigger asChild>
-            <Button size="lg">
-              Start Your Free Trial Today
-            </Button>
+            <Button size="lg">Start Your Free Trial Today</Button>
           </DialogTrigger>
         </motion.div>
       </div>

@@ -1,9 +1,14 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const AuthDialog = ({
   authMode,
@@ -11,12 +16,14 @@ const AuthDialog = ({
   formData,
   handleInputChange,
   handleSubmit,
-  loading
+  loading,
 }) => {
   return (
     <DialogContent className="sm:max-w-md">
       <DialogHeader>
-        <DialogTitle className="text-primary">Welcome to PlagiarismGuard</DialogTitle>
+        <DialogTitle className="text-primary">
+          Welcome to Plagiarism Detector
+        </DialogTitle>
         <DialogDescription>
           Sign in to your account or create a new one to get started.
         </DialogDescription>
@@ -36,7 +43,7 @@ const AuthDialog = ({
                 id="email-signin"
                 name="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder="name@email.com"
                 value={formData.email}
                 onChange={handleInputChange}
                 required
@@ -55,7 +62,7 @@ const AuthDialog = ({
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing In...' : 'Sign In'}
+              {loading ? "Signing In..." : "Sign In"}
             </Button>
           </form>
         </TabsContent>
@@ -68,7 +75,7 @@ const AuthDialog = ({
                 id="fullName-signup"
                 name="fullName"
                 type="text"
-                placeholder="John Doe"
+                placeholder="Full Name"
                 value={formData.fullName}
                 onChange={handleInputChange}
                 required
@@ -80,7 +87,7 @@ const AuthDialog = ({
                 id="email-signup"
                 name="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder="name@email.com"
                 value={formData.email}
                 onChange={handleInputChange}
                 required
@@ -99,7 +106,7 @@ const AuthDialog = ({
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Creating Account...' : 'Create Account'}
+              {loading ? "Creating Account..." : "Create Account"}
             </Button>
           </form>
         </TabsContent>

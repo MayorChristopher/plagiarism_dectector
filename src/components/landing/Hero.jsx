@@ -1,8 +1,8 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { DialogTrigger } from '@/components/ui/dialog';
+import React from "react";
+import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { DialogTrigger } from "@/components/ui/dialog";
 
 const Hero = ({ onDemoClick }) => {
   return (
@@ -19,7 +19,9 @@ const Hero = ({ onDemoClick }) => {
               AI-Powered Plagiarism Detection
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-              Protect your content integrity with advanced machine learning algorithms that detect both direct copying and sophisticated paraphrasing.
+              Protect your content integrity with advanced machine learning
+              algorithms that detect both direct copying and sophisticated
+              paraphrasing.
             </p>
           </motion.div>
 
@@ -34,27 +36,6 @@ const Hero = ({ onDemoClick }) => {
                 Start Free Trial <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </DialogTrigger>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={onDemoClick}
-            >
-              Watch Demo
-            </Button>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1, delay: 0.5 }}
-            className="relative"
-          >
-            <div className="bg-card rounded-2xl p-4 border shadow-lg">
-              <img 
-                className="w-full max-w-4xl mx-auto rounded-lg"
-                alt="PlagiarismGuard Dashboard Interface"
-               src="https://images.unsplash.com/photo-1686061593213-98dad7c599b9" />
-            </div>
           </motion.div>
         </div>
       </div>
