@@ -13,6 +13,8 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/use-toast";
 import { motion } from "framer-motion";
+import { uploadFile, checkFile, getReport } from "@/lib/plagiarismCheckApi";
+import { generateMockMatches } from "@/data/mockAnalysis";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 const SUPPORTED_FORMATS = ["pdf", "doc", "docx", "txt", "rtf"];
@@ -96,34 +98,73 @@ const DocumentUpload = () => {
     }
 
     setUploading(true);
-
-    const existingDocs = JSON.parse(
-      localStorage.getItem("plagiarism_documents") || "[]"
-    );
-    const newDocuments = files.map((file) => {
-      // Simulate a small chance of analysis failure for demonstration
-      const shouldFail = Math.random() < 0.1;
-      return {
-        id: Date.now() + Math.random().toString(),
-        name: file.name,
-        uploadDate: new Date().toISOString(),
-        status: shouldFail ? "failed" : "analyzing",
-        progress: 0,
-        plagiarismScore: null,
-        wordCount: Math.floor(Math.random() * 4500) + 500,
-        size: formatFileSize(file.size),
-        userId: user.id,
-      };
-    });
-
-    const updatedDocs = [...existingDocs, ...newDocuments];
-    localStorage.setItem("plagiarism_documents", JSON.stringify(updatedDocs));
-
-    toast({
-      title: "Upload successful!",
-      description: `${files.length} document(s) are now being analyzed.`,
-    });
-    navigate("/dashboard");
+    try {
+      for (const fileObj of files) {
+        toast({ title: `Uploading ${fileObj.name}...` });
+        // 1. Upload file
+        const uploadRes = await uploadFile(fileObj.file);
+        const fileId = uploadRes.id;
+        // 2. Trigger plagiarism check
+        await checkFile(fileId);
+        toast({ title: `Analyzing ${fileObj.name}...` });
+        // 3. Poll for report (simple polling, could be improved)
+        let report = null;
+        let attempts = 0;
+        while (attempts < 20) { // up to ~20s
+          await new Promise((r) => setTimeout(r, 1000));
+          try {
+            report = await getReport(fileId);
+            if (report && report.status === "finished") break;
+          } catch (e) {}
+          attempts++;
+        }
+        if (!report || report.status !== "finished") {
+          toast({
+            title: `Analysis failed for ${fileObj.name}`,
+            description: "The plagiarism check did not complete in time.",
+            variant: "destructive",
+          });
+          continue;
+        }
+        // Save or display the report as needed (e.g., navigate to report page)
+        toast({
+          title: `Analysis complete for ${fileObj.name}`,
+          description: `Plagiarism: ${report.plagiarism}%`,
+        });
+        // Save document metadata to localStorage for dashboard
+        let matches = report.matches || [];
+        // No more mock match generation. Only use what the API returns.
+        if (!report.plagiarism || report.plagiarism === 0) {
+          matches = [];
+        }
+        const savedDocuments = JSON.parse(localStorage.getItem("plagiarism_documents") || "[]");
+        const newDoc = {
+          id: fileId,
+          name: fileObj.name,
+          userId: user?.id || null,
+          uploadDate: new Date().toISOString(),
+          status: "completed",
+          plagiarismScore: report.plagiarism,
+          matches,
+          wordCount: fileObj.file.size ? Math.round(fileObj.file.size / 6) : 0, // crude estimate
+        };
+        localStorage.setItem(
+          "plagiarism_documents",
+          JSON.stringify([newDoc, ...savedDocuments])
+        );
+        // Optionally, redirect to a report page or update state here
+      }
+      setFiles([]);
+      setUploading(false);
+      navigate("/dashboard");
+    } catch (error) {
+      setUploading(false);
+      toast({
+        title: "Upload or analysis failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (

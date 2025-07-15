@@ -133,6 +133,16 @@ const Dashboard = () => {
     navigate("/");
   };
 
+  const handleDeleteDocument = (docId) => {
+    const updatedDocs = documents.filter((doc) => doc.id !== docId);
+    setDocuments(updatedDocs);
+    localStorage.setItem("plagiarism_documents", JSON.stringify(updatedDocs));
+    toast({
+      title: "Document Deleted",
+      description: "The document has been removed from your account.",
+    });
+  };
+
   const stats = [
     {
       title: "Documents Uploaded",
@@ -385,6 +395,15 @@ const Dashboard = () => {
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
+                              {(doc.userId === user?.id || user?.role === "admin") && (
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleDeleteDocument(doc.id)}
+                                >
+                                  Delete
+                                </Button>
+                              )}
                             </div>
                           </div>
                         </div>
