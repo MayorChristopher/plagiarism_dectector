@@ -1,7 +1,7 @@
 // Copyleaks API integration
 // Docs: https://api.copyleaks.com/documentation/v3
 
-const BACKEND_URL = 'http://localhost:3001'; // Change to your Render URL after deployment
+const BACKEND_URL = 'https://copyleaks-backend.onrender.com'; // Change to your Render URL after deployment
 
 export async function uploadFile(file) {
     const formData = new FormData();
