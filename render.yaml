@@ -3,8 +3,8 @@ services:
     name: copyleaks-backend
     env: node
     plan: free
-    buildCommand: npm install
-    startCommand: node server.js
+    buildCommand: cd copyleaks-backend && npm install
+    startCommand: cd copyleaks-backend && npm start
     envVars:
       - key: CLIENT_ID
         value: hackonrichard@gmail.com
