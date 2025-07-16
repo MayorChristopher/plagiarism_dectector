@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: copyleaks-backend
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: CLIENT_ID
+        value: hackonrichard@gmail.com
+      - key: CLIENT_SECRET
+        value: 328dfc6e-3671-405a-8e4e-5579853c9656
+    autoDeploy: true
+    # Optional: Add a Vercel deploy hook to update the frontend after backend deploy
+    # Replace the URL below with your actual Vercel deploy hook URL
+    # hooks:
+    #   postDeploy:
+    #     - type: web
+    #       command: curl -X POST https://api.vercel.com/v1/integrations/deploy/prj_xxx/xxx
+
+# If you want to add more services (e.g., static frontend), add them here.

@@ -104,6 +104,22 @@ const DocumentUpload = () => {
         // 1. Upload file
         const uploadRes = await uploadFile(fileObj.file);
         const fileId = uploadRes.id;
+        // Save as 'analyzing' immediately
+        const savedDocuments = JSON.parse(localStorage.getItem("plagiarism_documents") || "[]");
+        const analyzingDoc = {
+          id: fileId,
+          name: fileObj.name,
+          userId: user?.id || null,
+          uploadDate: new Date().toISOString(),
+          status: "analyzing",
+          plagiarismScore: null,
+          matches: [],
+          wordCount: fileObj.file.size ? Math.round(fileObj.file.size / 6) : 0,
+        };
+        localStorage.setItem(
+          "plagiarism_documents",
+          JSON.stringify([analyzingDoc, ...savedDocuments])
+        );
         // 2. Trigger plagiarism check
         await checkFile(fileId);
         toast({ title: `Analyzing ${fileObj.name}...` });
@@ -131,27 +147,40 @@ const DocumentUpload = () => {
           title: `Analysis complete for ${fileObj.name}`,
           description: `Plagiarism: ${report.plagiarism}%`,
         });
-        // Save document metadata to localStorage for dashboard
-        let matches = report.matches || [];
-        // No more mock match generation. Only use what the API returns.
-        if (!report.plagiarism || report.plagiarism === 0) {
-          matches = [];
+        // Update the document in localStorage with the finished report
+        const currentDocuments = JSON.parse(localStorage.getItem("plagiarism_documents") || "[]");
+        let found = false;
+        const updatedDocuments = currentDocuments.map(doc => {
+          if (doc.id === fileId) {
+            found = true;
+            return {
+              ...doc,
+              status: "completed",
+              plagiarismScore: report.plagiarism,
+              matches: report.matches || [],
+              analysisDate: new Date().toISOString(),
+              wordCount: report.wordCount || doc.wordCount,
+              // Add any other report fields you want here
+            };
+          }
+          return doc;
+        });
+        if (!found) {
+          // If not found, add as new
+          updatedDocuments.unshift({
+            id: fileId,
+            name: fileObj.name,
+            userId: user?.id || null,
+            uploadDate: new Date().toISOString(),
+            status: "completed",
+            plagiarismScore: report.plagiarism,
+            matches: report.matches || [],
+            analysisDate: new Date().toISOString(),
+            wordCount: report.wordCount || (fileObj.file.size ? Math.round(fileObj.file.size / 6) : 0),
+            // Add any other report fields you want here
+          });
         }
-        const savedDocuments = JSON.parse(localStorage.getItem("plagiarism_documents") || "[]");
-        const newDoc = {
-          id: fileId,
-          name: fileObj.name,
-          userId: user?.id || null,
-          uploadDate: new Date().toISOString(),
-          status: "completed",
-          plagiarismScore: report.plagiarism,
-          matches,
-          wordCount: fileObj.file.size ? Math.round(fileObj.file.size / 6) : 0, // crude estimate
-        };
-        localStorage.setItem(
-          "plagiarism_documents",
-          JSON.stringify([newDoc, ...savedDocuments])
-        );
+        localStorage.setItem("plagiarism_documents", JSON.stringify(updatedDocuments));
         // Optionally, redirect to a report page or update state here
       }
       setFiles([]);

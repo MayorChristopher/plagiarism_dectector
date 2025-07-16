@@ -28,7 +28,9 @@ const MatchesTab = ({ matches }) => {
               <div className={`w-3 h-3 rounded-full flex-shrink-0 ${match.type === 'exact' ? 'bg-red-500' : 'bg-yellow-500'}`}></div>
               <span className="text-sm font-medium capitalize">{match.type} Match</span>
               <span className="text-sm text-muted-foreground">•</span>
-              <span className="text-sm text-muted-foreground">{match.similarity}% similarity</span>
+              <span className="text-sm text-muted-foreground">
+                {match.similarity ? `${match.similarity}% similarity` : "No similarity score"}
+              </span>
             </div>
             <Button variant="ghost" size="sm" onClick={() => copyToClipboard(match.text)}><Copy className="h-4 w-4" /></Button>
           </div>

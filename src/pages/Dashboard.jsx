@@ -31,6 +31,7 @@ import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/use-toast";
 import { generateMockMatches } from "@/data/mockAnalysis";
+import { deleteScan, listScans, deleteSpecificScans } from "@/lib/plagiarismCheckApi";
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -133,7 +134,20 @@ const Dashboard = () => {
     navigate("/");
   };
 
-  const handleDeleteDocument = (docId) => {
+  const handleDeleteDocument = async (docId) => {
+    try {
+      // First, try to delete the scan from Copyleaks to free up credits
+      await deleteScan(docId);
+      toast({
+        title: "Scan Deleted from Copyleaks",
+        description: "The scan has been removed from Copyleaks and credits freed up.",
+      });
+    } catch (error) {
+      console.log("Could not delete scan from Copyleaks:", error.message);
+      // Continue with local deletion even if Copyleaks deletion fails
+    }
+    
+    // Always delete from local storage
     const updatedDocs = documents.filter((doc) => doc.id !== docId);
     setDocuments(updatedDocs);
     localStorage.setItem("plagiarism_documents", JSON.stringify(updatedDocs));
@@ -141,6 +155,87 @@ const Dashboard = () => {
       title: "Document Deleted",
       description: "The document has been removed from your account.",
     });
+  };
+
+  // Add bulk delete functionality to clear all scans
+  const handleClearAllScans = async () => {
+    if (!confirm("Are you sure you want to delete ALL scans from Copyleaks? This will free up all your credits but cannot be undone.")) {
+      return;
+    }
+
+    try {
+      // Get all scan IDs from documents
+      const scanIds = userDocuments.map(doc => doc.id);
+      
+      // Delete each scan from Copyleaks
+      for (const scanId of scanIds) {
+        try {
+          await deleteScan(scanId);
+        } catch (error) {
+          console.log(`Failed to delete scan ${scanId}:`, error.message);
+        }
+      }
+
+      // Clear all documents from local storage
+      const updatedDocs = documents.filter(doc => !userDocuments.some(userDoc => userDoc.id === doc.id));
+      setDocuments(updatedDocs);
+      localStorage.setItem("plagiarism_documents", JSON.stringify(updatedDocs));
+
+      toast({
+        title: "All Scans Cleared",
+        description: "All scans have been deleted from Copyleaks and your credits freed up.",
+      });
+    } catch (error) {
+      toast({
+        title: "Clear Failed",
+        description: "Some scans could not be deleted. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Temporary function to delete specific scans from Copyleaks dashboard
+  const handleDeleteSpecificScans = async () => {
+    if (!confirm("This will delete the specific scans shown in your Copyleaks dashboard. Continue?")) {
+      return;
+    }
+
+    const specificScanIds = [
+      "9258a0ef-8066-4678-a654-f55ee45d2cf9",
+      "1440577b-df70-4ba0-b9ac-099241b38dfd",
+      "d5a3400e-285d-4ef8-859a-c65e814c46ac",
+      "80959602-7b66-4eca-b54a-e4135b4557fa",
+      "sample-6xix",
+      "23d149df-f5a8-4037-8d2e-66bbe9aa63e1",
+      "0c046a24-a5e8-44d1-aee5-245c890bbfdb",
+      "dce4d79f-9bb8-4306-829e-9442431e7d19",
+      "b9bf42ae-1e11-4dd3-a92c-1ceeb43393ca",
+      "b6f0e69d-c12f-4bec-9df3-f4f7a2317be0",
+      "sample-vell",
+      "sample-ojh3",
+      "sample-sqzw"
+    ];
+
+    try {
+      toast({ title: "Deleting scans from Copyleaks..." });
+      const result = await deleteSpecificScans(specificScanIds);
+      
+      console.log("Delete result:", result);
+      
+      const successCount = result.results.filter(r => r.success).length;
+      const failCount = result.results.length - successCount;
+      
+      toast({
+        title: "Scans Deleted",
+        description: `Successfully deleted ${successCount} scans. ${failCount} failed. Check console for details.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Delete Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const stats = [
@@ -276,6 +371,22 @@ const Dashboard = () => {
                         className="pl-10 w-full sm:w-64"
                       />
                     </div>
+                    {userDocuments.length > 0 && (
+                      <Button 
+                        variant="outline" 
+                        onClick={handleClearAllScans}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        Clear All Scans
+                      </Button>
+                    )}
+                    <Button 
+                      variant="outline" 
+                      onClick={handleDeleteSpecificScans}
+                      className="text-orange-600 hover:text-orange-700"
+                    >
+                      Delete Dashboard Scans
+                    </Button>
                     <Button onClick={() => navigate("/upload")}>
                       <Plus className="h-4 w-4 sm:mr-2" />{" "}
                       <span className="hidden sm:inline">New Scan</span>
