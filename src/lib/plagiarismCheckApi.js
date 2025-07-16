@@ -1,7 +1,7 @@
 // Copyleaks API integration
 // Docs: https://api.copyleaks.com/documentation/v3
 
-const BACKEND_URL = 'https://copyleaks-backend.onrender.com'; // Change to your Render URL after deployment
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://copyleaks-backend.onrender.com'; // Uses env variable if set
 
 export async function uploadFile(file) {
     const formData = new FormData();
