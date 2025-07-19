@@ -16,6 +16,7 @@ import Profile from "@/pages/Profile";
 import Integrations from "@/pages/Integrations";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ErrorFallback from "@/pages/ErrorFallback";
+import Contact from "@/pages/Contact";
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
           <div className="min-h-screen">
             <Routes>
               <Route path="/" element={<LandingPage />} />
+              <Route path="/contact" element={<Contact />} />
               <Route
                 path="/dashboard"
                 element={

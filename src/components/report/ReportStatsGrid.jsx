@@ -1,28 +1,62 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, CheckCircle, AlertTriangle, Globe } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { FileText, AlertTriangle, Clock, BarChart2 } from 'lucide-react';
 
-const ReportStatsGrid = ({ stats }) => {
-  const statItems = [
-    { title: 'Total Words', value: (stats?.totalWords || 0).toLocaleString(), icon: FileText },
-    { title: 'Original Words', value: (stats?.originalWords || 0).toLocaleString(), icon: CheckCircle },
-    { title: 'Flagged Words', value: (stats?.plagiarizedWords || 0).toLocaleString(), icon: AlertTriangle },
-    { title: 'Sources Found', value: (stats?.sourcesFound || 0).toLocaleString(), icon: Globe },
+const ReportStatsGrid = ({ report }) => {
+  const stats = [
+    {
+      title: 'Plagiarism Score',
+      value: `${report.plagiarismScore}%`,
+      icon: BarChart2,
+      color: report.plagiarismScore > 30 ? 'text-red-500' : 
+             report.plagiarismScore > 15 ? 'text-amber-500' : 
+             'text-emerald-500'
+    },
+    {
+      title: 'Word Count',
+      value: report.wordCount.toLocaleString(),
+      icon: FileText,
+      color: 'text-emerald-500'
+    },
+    {
+      title: 'Analysis Time',
+      value: '< 1 min',
+      icon: Clock,
+      color: 'text-emerald-500'
+    },
+    {
+      title: 'Matches Found',
+      value: report.matches?.length || 0,
+      icon: AlertTriangle,
+      color: 'text-emerald-500'
+    }
   ];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {statItems.map((item, index) => (
-        <Card key={index}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
-            <item.icon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{item.value}</div>
-          </CardContent>
-        </Card>
-      ))}
+      {stats.map((stat, index) => {
+        const Icon = stat.icon;
+        return (
+          <Card 
+            key={index}
+            className="bg-white border-slate-200 hover:border-emerald-200 transition-colors"
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="w-12 h-12 rounded-lg bg-emerald-50 flex items-center justify-center">
+                  <Icon className={`h-6 w-6 ${stat.color}`} />
+                </div>
+                <span className={`text-2xl font-bold ${stat.color}`}>
+                  {stat.value}
+                </span>
+              </div>
+              <h3 className="mt-4 text-sm font-medium text-slate-600">
+                {stat.title}
+              </h3>
+            </div>
+          </Card>
+        );
+      })}
     </div>
   );
 };

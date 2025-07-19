@@ -1,6 +1,6 @@
 import React from "react";
 import { Shield } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
@@ -14,39 +14,12 @@ const Footer = () => {
             </span>
           </div>
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-muted-foreground">
-            <span
+            <Link
+              to="/contact"
               className="hover:text-primary cursor-pointer transition-colors"
-              onClick={() =>
-                toast({
-                  title:
-                    "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀",
-                })
-              }
-            >
-              Privacy Policy
-            </span>
-            <span
-              className="hover:text-primary cursor-pointer transition-colors"
-              onClick={() =>
-                toast({
-                  title:
-                    "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀",
-                })
-              }
-            >
-              Terms of Service
-            </span>
-            <span
-              className="hover:text-primary cursor-pointer transition-colors"
-              onClick={() =>
-                toast({
-                  title:
-                    "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀",
-                })
-              }
             >
               Contact
-            </span>
+            </Link>
           </div>
         </div>
         <div className="mt-8 pt-8 border-t text-center text-muted-foreground">

@@ -1,342 +1,231 @@
-import React, { useState, useCallback } from "react";
-import { Helmet } from "react-helmet";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Shield, Upload, FileText, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { useAuth } from "@/contexts/AuthContext";
-import { toast } from "@/components/ui/use-toast";
-import { motion } from "framer-motion";
-import { uploadFile, checkFile, getReport } from "@/lib/plagiarismCheckApi";
-import { generateMockMatches } from "@/data/mockAnalysis";
-
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-const SUPPORTED_FORMATS = ["pdf", "doc", "docx", "txt", "rtf"];
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { ArrowLeft } from 'lucide-react';
+import UploadDropzone from '@/components/upload/UploadDropzone';
+import UploadFileList from '@/components/upload/UploadFileList';
+import UploadInfoGrid from '@/components/upload/UploadInfoGrid';
+import { uploadFile, getReport } from '@/lib/plagiarismCheckApi';
 
 const DocumentUpload = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const [dragActive, setDragActive] = useState(false);
+  const { user } = useAuth();
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
 
-  const handleDrag = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") setDragActive(true);
-    else if (e.type === "dragleave") setDragActive(false);
-  }, []);
+  const handleFilesAdded = (newFiles) => {
+    const processedFiles = newFiles.map(file => ({
+      file,
+      id: Date.now() + Math.random().toString(36).substring(7),
+      name: file.name,
+      size: file.size,
+      progress: 0,
+      status: 'pending'
+    }));
+    setFiles(prev => [...prev, ...processedFiles]);
+  };
 
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFiles(Array.from(e.dataTransfer.files));
+  const handleFileRemove = (fileToRemove) => {
+    setFiles(prev => prev.filter(file => file.id !== fileToRemove.id));
+  };
+
+  const pollReport = async (scanId, fileId) => {
+    try {
+      const report = await getReport(scanId);
+      
+      // Update file status based on report
+      setFiles(prev => prev.map(f => {
+        if (f.id === fileId) {
+          return {
+            ...f,
+            status: 'completed',
+            progress: 100,
+            plagiarismScore: report.plagiarismScore || 0,
+            matches: report.matches || []
+          };
+        }
+        return f;
+      }));
+
+      // Update localStorage with the new document data
+      const documentData = {
+        id: fileId,
+        scanId,
+        name: files.find(f => f.id === fileId)?.name,
+        size: files.find(f => f.id === fileId)?.size,
+        userId: user?.id,
+        uploadDate: new Date().toISOString(),
+        analysisDate: new Date().toISOString(),
+        status: 'completed',
+        plagiarismScore: report.plagiarismScore || 0,
+        matches: report.matches || [],
+        wordCount: report.wordCount || 0
+      };
+
+      const existingDocs = JSON.parse(localStorage.getItem('plagiarism_documents') || '[]');
+      localStorage.setItem('plagiarism_documents', JSON.stringify([documentData, ...existingDocs]));
+
+      return true;
+    } catch (error) {
+      if (error.message.includes('404') || error.message.includes('not found')) {
+        // Report not ready, continue polling
+        return false;
+      }
+      throw error;
     }
-  }, []);
-
-  const handleFiles = (fileList) => {
-    const acceptedFiles = [];
-    fileList.forEach((file) => {
-      const extension = file.name.split(".").pop().toLowerCase();
-      if (!SUPPORTED_FORMATS.includes(extension)) {
-        toast({
-          title: "Unsupported File Type",
-          description: `The file "${
-            file.name
-          }" was ignored. Only ${SUPPORTED_FORMATS.join(
-            ", "
-          )} files are supported.`,
-          variant: "destructive",
-        });
-        return;
-      }
-      if (file.size > MAX_FILE_SIZE) {
-        toast({
-          title: "File Too Large",
-          description: `The file "${file.name}" exceeds the 10MB size limit.`,
-          variant: "destructive",
-        });
-        return;
-      }
-      acceptedFiles.push({
-        id: Date.now() + Math.random(),
-        file,
-        name: file.name,
-        size: file.size,
-      });
-    });
-    setFiles((prev) => [...prev, ...acceptedFiles]);
   };
 
-  const removeFile = (fileId) =>
-    setFiles((prev) => prev.filter((f) => f.id !== fileId));
-
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  };
-
-  const handleUpload = async () => {
+  const handleStartAnalysis = async () => {
     if (files.length === 0) {
       toast({
         title: "No files selected",
-        description: "Please select at least one file to upload.",
-        variant: "destructive",
+        description: "Please select at least one file to analyze.",
+        variant: "destructive"
       });
       return;
     }
 
     setUploading(true);
     try {
-      for (const fileObj of files) {
-        toast({ title: `Uploading ${fileObj.name}...` });
-        // 1. Upload file
-        const uploadRes = await uploadFile(fileObj.file);
-        const fileId = uploadRes.id;
-        // Save as 'analyzing' immediately
-        const savedDocuments = JSON.parse(localStorage.getItem("plagiarism_documents") || "[]");
-        const analyzingDoc = {
-          id: fileId,
-          name: fileObj.name,
-          userId: user?.id || null,
-          uploadDate: new Date().toISOString(),
-          status: "analyzing",
-          plagiarismScore: null,
-          matches: [],
-          wordCount: fileObj.file.size ? Math.round(fileObj.file.size / 6) : 0,
-        };
-        localStorage.setItem(
-          "plagiarism_documents",
-          JSON.stringify([analyzingDoc, ...savedDocuments])
-        );
-        // 2. Trigger plagiarism check
-        await checkFile(fileId);
-        toast({ title: `Analyzing ${fileObj.name}...` });
-        // 3. Poll for report (simple polling, could be improved)
-        let report = null;
+      for (const file of files) {
+        // Update status to uploading
+        setFiles(prev => prev.map(f => 
+          f.id === file.id ? { ...f, status: 'analyzing', progress: 10 } : f
+        ));
+
+        // Upload file
+        const uploadResult = await uploadFile(file.file);
+        
+        // Start polling for results
         let attempts = 0;
-        while (attempts < 20) { // up to ~20s
-          await new Promise((r) => setTimeout(r, 1000));
-          try {
-            report = await getReport(fileId);
-            if (report && report.status === "finished") break;
-          } catch (e) {}
+        const maxAttempts = 30; // 30 attempts * 2 seconds = 60 seconds max wait
+        
+        while (attempts < maxAttempts) {
+          // Update progress based on attempts
+          const progress = Math.min(90, 10 + (attempts * 80 / maxAttempts));
+          setFiles(prev => prev.map(f => 
+            f.id === file.id ? { ...f, progress } : f
+          ));
+
+          const isComplete = await pollReport(uploadResult.id, file.id);
+          if (isComplete) break;
+
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds between polls
           attempts++;
         }
-        if (!report || report.status !== "finished") {
-          toast({
-            title: `Analysis failed for ${fileObj.name}`,
-            description: "The plagiarism check did not complete in time.",
-            variant: "destructive",
-          });
-          continue;
+
+        if (attempts >= maxAttempts) {
+          throw new Error('Analysis timed out');
         }
-        // Save or display the report as needed (e.g., navigate to report page)
-        toast({
-          title: `Analysis complete for ${fileObj.name}`,
-          description: `Plagiarism: ${report.plagiarism}%`,
-        });
-        // Update the document in localStorage with the finished report
-        const currentDocuments = JSON.parse(localStorage.getItem("plagiarism_documents") || "[]");
-        let found = false;
-        const updatedDocuments = currentDocuments.map(doc => {
-          if (doc.id === fileId) {
-            found = true;
-            return {
-              ...doc,
-              status: "completed",
-              plagiarismScore: report.plagiarism,
-              matches: report.matches || [],
-              analysisDate: new Date().toISOString(),
-              wordCount: report.wordCount || doc.wordCount,
-              // Add any other report fields you want here
-            };
-          }
-          return doc;
-        });
-        if (!found) {
-          // If not found, add as new
-          updatedDocuments.unshift({
-            id: fileId,
-            name: fileObj.name,
-            userId: user?.id || null,
-            uploadDate: new Date().toISOString(),
-            status: "completed",
-            plagiarismScore: report.plagiarism,
-            matches: report.matches || [],
-            analysisDate: new Date().toISOString(),
-            wordCount: report.wordCount || (fileObj.file.size ? Math.round(fileObj.file.size / 6) : 0),
-            // Add any other report fields you want here
-          });
-        }
-        localStorage.setItem("plagiarism_documents", JSON.stringify(updatedDocuments));
-        // Optionally, redirect to a report page or update state here
       }
-      setFiles([]);
-      setUploading(false);
-      navigate("/dashboard");
-    } catch (error) {
-      setUploading(false);
+
       toast({
-        title: "Upload or analysis failed",
-        description: error.message,
-        variant: "destructive",
+        title: "Analysis Complete",
+        description: "All documents have been analyzed successfully."
       });
+
+      // Navigate to dashboard after all files are processed
+      navigate('/dashboard');
+    } catch (error) {
+      toast({
+        title: "Analysis Failed",
+        description: error.message || "There was an error analyzing your files.",
+        variant: "destructive"
+      });
+      
+      // Update failed file status
+      setFiles(prev => prev.map(f => 
+        f.status === 'analyzing' ? { ...f, status: 'error' } : f
+      ));
+    } finally {
+      setUploading(false);
     }
   };
 
+  const handleClearAll = () => {
+    setFiles([]);
+  };
+
   return (
-    <>
-      <Helmet>
-        <title>Upload Document - Plagiarism Detector</title>
-        <meta
-          name="description"
-          content="Upload your documents for AI-powered plagiarism detection and analysis."
-        />
-      </Helmet>
-      <div className="min-h-screen bg-secondary">
-        <header className="bg-background/80 backdrop-blur-sm border-b sticky top-0 z-40">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center h-16">
-              <Button
-                variant="ghost"
-                onClick={() => navigate("/dashboard")}
-                className="mr-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" /> Back
-              </Button>
-              <div className="flex items-center space-x-2">
-                <Shield className="h-7 w-7 text-primary" />
-                <h1 className="text-xl font-bold text-foreground">New Scan</h1>
-              </div>
-            </div>
-          </div>
-        </header>
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Upload Your Document(s)</CardTitle>
-              <CardDescription>
-                Drag and drop files or click to browse. Max 10MB per file.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div
-                className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                  dragActive
-                    ? "border-primary bg-primary/10"
-                    : "border-border hover:border-primary/50"
-                }`}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-              >
-                <input
-                  type="file"
-                  multiple
-                  accept={SUPPORTED_FORMATS.map((f) => `.${f}`).join(",")}
-                  onChange={(e) => handleFiles(Array.from(e.target.files))}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-
-                <div className="space-y-4">
-                  <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto">
-                    <Upload className="h-8 w-8" />
-                  </div>
-                  <div>
-                    <p className="text-lg font-semibold mb-2">
-                      Drop your files here, or{" "}
-                      <span className="text-primary">browse</span>
-                    </p>
-                    <p className="text-muted-foreground text-sm">
-                      Supports: {SUPPORTED_FORMATS.join(", ").toUpperCase()}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {files.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="mt-8"
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle>Selected Files ({files.length})</CardTitle>
-                  <CardDescription>
-                    Review your files before starting the analysis.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {files.map((file) => (
-                      <div
-                        key={file.id}
-                        className="flex items-center justify-between p-3 rounded-lg border"
-                      >
-                        <div className="flex items-center space-x-3 overflow-hidden">
-                          <div className="w-10 h-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                            <FileText className="h-5 w-5" />
-                          </div>
-                          <div className="overflow-hidden">
-                            <p className="font-medium truncate">{file.name}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {formatFileSize(file.size)}
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeFile(file.id)}
-                          disabled={uploading}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-6 flex justify-between sm:justify-end sm:space-x-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setFiles([])}
-                      disabled={uploading}
-                    >
-                      Clear All
-                    </Button>
-                    <Button
-                      onClick={handleUpload}
-                      disabled={uploading || files.length === 0}
-                    >
-                      {uploading
-                        ? "Uploading..."
-                        : `Start Analysis (${files.length})`}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-        </main>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className="container mx-auto px-4 py-8 max-w-7xl"
+    >
+      <div className="mb-8">
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/dashboard')}
+          className="mb-4 text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Dashboard
+        </Button>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Document Upload</h1>
+        <p className="text-slate-600">Upload your documents for plagiarism analysis</p>
       </div>
-    </>
+
+      <div className="grid gap-8">
+        <Card className="p-6 bg-white border-slate-200">
+          <UploadDropzone onFilesAdded={handleFilesAdded} />
+        </Card>
+
+        {files.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <Card className="p-6 bg-white border-slate-200">
+              <UploadFileList 
+                files={files} 
+                onFileRemove={handleFileRemove} 
+              />
+              <div className="mt-6 flex justify-end space-x-4">
+                <Button 
+                  variant="outline" 
+                  onClick={handleClearAll}
+                  disabled={uploading}
+                  className="border-slate-200 text-slate-700 hover:bg-slate-50"
+                >
+                  Clear All
+                </Button>
+                <Button 
+                  onClick={handleStartAnalysis}
+                  disabled={uploading || files.length === 0}
+                  className="bg-emerald-600 text-white hover:bg-emerald-700"
+                >
+                  {uploading ? (
+                    <>
+                      <span className="text-white">Analyzing...</span>
+                    </>
+                  ) : (
+                    <>
+                      Start Analysis ({files.length})
+                    </>
+                  )}
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+        >
+          <Card className="p-6 bg-white border-slate-200">
+            <UploadInfoGrid />
+          </Card>
+        </motion.div>
+      </div>
+    </motion.div>
   );
 };
 

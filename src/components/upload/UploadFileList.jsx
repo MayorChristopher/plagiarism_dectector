@@ -1,74 +1,107 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { FileText, X, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { FileText, X } from 'lucide-react';
 
-const UploadFileList = ({ files, onRemoveFile, onClearAll, onStartAnalysis, uploading, uploadProgress }) => {
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+const UploadFileList = ({ files, onFileRemove }) => {
+  const getStatusInfo = (file) => {
+    switch (file.status) {
+      case 'completed':
+        return {
+          icon: CheckCircle,
+          color: 'text-emerald-500',
+          text: `Analysis Complete - ${file.plagiarismScore}%`
+        };
+      case 'analyzing':
+        return {
+          icon: Clock,
+          color: 'text-blue-500',
+          text: `Analyzing... ${file.progress}%`
+        };
+      case 'error':
+        return {
+          icon: AlertTriangle,
+          color: 'text-red-500',
+          text: 'Analysis Failed'
+        };
+      default:
+        return {
+          icon: Clock,
+          color: 'text-slate-400',
+          text: 'Pending Analysis'
+        };
+    }
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.1 }}
-      className="mb-8"
-    >
-      <Card>
-        <CardHeader>
-          <CardTitle>Selected Files ({files.length})</CardTitle>
-          <CardDescription>Review your files before uploading</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {uploading && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-6"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Uploading...</span>
-                <span className="text-sm text-muted-foreground">{uploadProgress}%</span>
-              </div>
-              <Progress value={uploadProgress} className="h-2" />
-            </motion.div>
-          )}
-
-          <div className="space-y-3">
-            {files.map((file) => (
-              <div key={file.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-primary/10 text-primary rounded-lg flex items-center justify-center">
-                    <FileText className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-medium">{file.name}</p>
-                    <p className="text-sm text-muted-foreground">{formatFileSize(file.size)}</p>
-                  </div>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => onRemoveFile(file.id)} disabled={uploading}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-          </div>
+    <div className="w-full">
+      <h3 className="text-lg font-semibold text-slate-900 mb-6">Uploaded Files</h3>
+      <div className="space-y-4">
+        {files.map((file) => {
+          const status = getStatusInfo(file);
+          const StatusIcon = status.icon;
           
-          <div className="mt-6 flex justify-end space-x-4">
-            <Button variant="outline" onClick={onClearAll} disabled={uploading}>Clear All</Button>
-            <Button onClick={onStartAnalysis} disabled={uploading || files.length === 0}>
-              {uploading ? 'Uploading...' : `Start Analysis (${files.length})`}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+          return (
+            <motion.div
+              key={file.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.2 }}
+              className="flex items-center gap-4 p-4 rounded-lg border border-slate-200 bg-white"
+            >
+              <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                <FileText className="h-5 w-5 text-emerald-600" />
+              </div>
+
+              <div className="flex-grow min-w-0">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-medium text-slate-900 truncate">
+                    {file.name}
+                  </h4>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onFileRemove(file)}
+                    className="text-slate-500 hover:text-emerald-700 hover:bg-emerald-50"
+                    disabled={file.status === 'analyzing'}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <StatusIcon className={`h-4 w-4 ${status.color}`} />
+                      <span className="text-sm text-slate-600">{status.text}</span>
+                    </div>
+                    <span className="text-sm text-slate-600 whitespace-nowrap">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB
+                    </span>
+                  </div>
+
+                  {file.status === 'analyzing' && (
+                    <Progress 
+                      value={file.progress} 
+                      className="h-2 bg-emerald-100" 
+                    />
+                  )}
+
+                  {file.size > 10 * 1024 * 1024 && (
+                    <div className="flex items-center gap-2 mt-2 text-amber-600">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span className="text-xs">Large file may take longer to process</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
   );
 };
 
