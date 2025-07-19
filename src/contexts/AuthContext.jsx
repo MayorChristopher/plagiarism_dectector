@@ -29,11 +29,7 @@ const initializeUsers = () => {
   if (existingUsers.length === 0) {
     const adminUser = {
       id: "admin-001",
-<<<<<<< HEAD
-      email: "mayoru24@gmail.com",
-=======
       email: "admin@gmail.com",
->>>>>>> origin/master
       password: "admin",
       fullName: "Admin User",
       role: "admin",
@@ -43,23 +39,7 @@ const initializeUsers = () => {
       reportsGenerated: 0,
       avatar: null,
     };
-<<<<<<< HEAD
-    const demoUser = {
-      id: "user-001",
-      email: "user@PlagiarismDetector.com",
-      password: "password123",
-      fullName: "Demo User",
-      role: "user",
-      createdAt: new Date().toISOString(),
-      status: "active",
-      documentsUploaded: 3,
-      reportsGenerated: 2,
-      avatar: null,
-    };
-    const users = [adminUser, demoUser];
-=======
     const users = [adminUser];
->>>>>>> origin/master
     localStorage.setItem("plagiarism_users", JSON.stringify(users));
   }
 };
