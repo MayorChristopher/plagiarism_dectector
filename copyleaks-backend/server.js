@@ -139,6 +139,11 @@ app.delete('/api/scan/:scanId', async (req, res) => {
         console.log(`Delete response status: ${copyleaksRes.status}`);
         console.log(`Delete response: ${responseText}`);
 
+        if (copyleaksRes.status === 404) {
+            // Treat as success: scan already deleted
+            return res.json({ success: true, message: 'Scan already deleted or not found on Copyleaks' });
+        }
+
         if (copyleaksRes.ok) {
             res.json({ success: true, message: 'Scan deleted successfully from Copyleaks' });
         } else {
