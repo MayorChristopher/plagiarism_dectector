@@ -12,6 +12,7 @@ import CTA from "@/components/landing/CTA";
 import Footer from "@/components/landing/Footer";
 import AuthDialog from "@/components/landing/AuthDialog";
 import DemoModal from "@/components/landing/DemoModal";
+import AIContentDetector from "@/components/ai/AIContentDetector";
 
 const LandingPage = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -70,11 +71,11 @@ const LandingPage = () => {
     <>
       <Helmet>
         <title>
-          Plagiarism Detector - Advanced AI-Powered Plagiarism Detection
+          OriginaLite - Plagiarism & AI Content Detection Platform
         </title>
         <meta
           name="description"
-          content="Detect plagiarism with cutting-edge AI technology. Secure document analysis, detailed reports, and comprehensive plagiarism checking for academic and professional use."
+          content="OriginaLite: Detect plagiarism and AI-generated content with advanced AI technology. Secure document analysis, detailed reports, and comprehensive originality checking for academic and professional use."
         />
       </Helmet>
 

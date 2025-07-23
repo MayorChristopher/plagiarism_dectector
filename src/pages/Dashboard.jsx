@@ -18,11 +18,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/components/ui/use-toast";
 import { deleteScan } from "@/lib/plagiarismCheckApi";
+import AIContentDetector from '@/components/ai/AIContentDetector';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [documents, setDocuments] = useState([]);
+  const [activeTab, setActiveTab] = useState('plagiarism');
 
   useEffect(() => {
     const loadDocuments = () => {
@@ -142,150 +145,161 @@ const Dashboard = () => {
         </header>
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-8"
-          >
-            <h2 className="text-2xl md:text-3xl font-bold mb-1 text-slate-900">
-              Welcome back, {user?.fullName.split(" ")[0]}!
-            </h2>
-            <p className="text-slate-600">
-              Here's an overview of your plagiarism detection activity.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
-          >
-            {stats.map((stat, index) => (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
+            <TabsList className="bg-slate-100 text-slate-900 mb-6">
+              <TabsTrigger value="plagiarism">Plagiarism Reports</TabsTrigger>
+              <TabsTrigger value="ai">AI Content Detection</TabsTrigger>
+            </TabsList>
+            <TabsContent value="plagiarism">
               <motion.div
-                key={index}
-                whileHover={{ y: -5 }}
-                className="hover-lift"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="mb-8"
               >
-                <Card className="bg-white border-slate-200">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-slate-600">
-                      {stat.title}
-                    </CardTitle>
-                    <stat.icon className="h-4 w-4 text-slate-400" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
-                  </CardContent>
-                </Card>
+                <h2 className="text-2xl md:text-3xl font-bold mb-1 text-slate-900">
+                  Welcome back, {user?.fullName.split(" ")[0]}!
+                </h2>
+                <p className="text-slate-600">
+                  Here's an overview of your plagiarism detection activity.
+                </p>
               </motion.div>
-            ))}
-          </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <div>
-                <h3 className="text-xl font-semibold text-slate-900">Your Documents</h3>
-                <p className="text-slate-600">Manage and track your document analysis</p>
-              </div>
-              <div className="flex gap-4">
-                <Button
-                  onClick={() => navigate("/upload")}
-                  className="bg-emerald-600 text-white hover:bg-emerald-700"
-                >
-                  <Upload className="h-4 w-4 mr-2 text-white" /> Upload New
-                </Button>
-              </div>
-            </div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+              >
+                {stats.map((stat, index) => (
+                  <motion.div
+                    key={index}
+                    whileHover={{ y: -5 }}
+                    className="hover-lift"
+                  >
+                    <Card className="bg-white border-slate-200">
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium text-slate-600">
+                          {stat.title}
+                        </CardTitle>
+                        <stat.icon className="h-4 w-4 text-slate-400" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold text-slate-900">{stat.value}</div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </motion.div>
 
-            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-              {documents.length === 0 ? (
-                <div className="text-center py-12">
-                  <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                  <h4 className="text-lg font-semibold text-slate-900 mb-2">No Documents Found</h4>
-                  <p className="text-slate-600">
-                    Upload your first document to get started with plagiarism detection.
-                  </p>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                  <div>
+                    <h3 className="text-xl font-semibold text-slate-900">Your Documents</h3>
+                    <p className="text-slate-600">Manage and track your document analysis</p>
+                  </div>
+                  <div className="flex gap-4">
+                    <Button
+                      onClick={() => navigate("/upload")}
+                      className="bg-emerald-600 text-white hover:bg-emerald-700"
+                    >
+                      <Upload className="h-4 w-4 mr-2 text-white" /> Upload New
+                    </Button>
+                  </div>
                 </div>
-              ) : (
-                <div className="divide-y divide-slate-200">
-                  {documents.map((doc) => {
-                    const StatusIcon = doc.status === "completed" 
-                      ? doc.plagiarismScore > 30 
-                        ? AlertTriangle 
-                        : CheckCircle 
-                      : Clock;
 
-                    return (
-                      <motion.div
-                        key={doc.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 hover:bg-slate-50 transition-colors"
-                      >
-                        <div className="flex items-center space-x-4 mb-4 sm:mb-0 flex-grow">
-                          <div className="w-10 h-10 bg-slate-100 text-slate-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <FileText className="h-5 w-5" />
-                          </div>
-                          <div className="flex-grow overflow-hidden">
-                            <h4 className="font-semibold text-slate-900 truncate">
-                              {doc.name}
-                            </h4>
-                            <div className="flex items-center space-x-2 text-sm text-slate-600">
-                              <span>
-                                {new Date(doc.uploadDate).toLocaleDateString()}
-                              </span>
+                <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                  {documents.length === 0 ? (
+                    <div className="text-center py-12">
+                      <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                      <h4 className="text-lg font-semibold text-slate-900 mb-2">No Documents Found</h4>
+                      <p className="text-slate-600">
+                        Upload your first document to get started with plagiarism detection.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-200">
+                      {documents.map((doc) => {
+                        const StatusIcon = doc.status === "completed" 
+                          ? doc.plagiarismScore > 30 
+                            ? AlertTriangle 
+                            : CheckCircle 
+                          : Clock;
+
+                        return (
+                          <motion.div
+                            key={doc.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 hover:bg-slate-50 transition-colors"
+                          >
+                            <div className="flex items-center space-x-4 mb-4 sm:mb-0 flex-grow">
+                              <div className="w-10 h-10 bg-slate-100 text-slate-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <FileText className="h-5 w-5" />
+                              </div>
+                              <div className="flex-grow overflow-hidden">
+                                <h4 className="font-semibold text-slate-900 truncate">
+                                  {doc.name}
+                                </h4>
+                                <div className="flex items-center space-x-2 text-sm text-slate-600">
+                                  <span>
+                                    {new Date(doc.uploadDate).toLocaleDateString()}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-4 sm:space-x-6 w-full sm:w-auto justify-between sm:justify-end">
-                          <div className="flex-grow sm:flex-grow-0">
-                            <div className="flex items-center space-x-1">
-                              <StatusIcon className={`h-4 w-4 ${
-                                doc.status === "completed"
-                                  ? doc.plagiarismScore > 30
-                                    ? "text-red-600"
-                                    : "text-emerald-600"
-                                  : "text-blue-600"
-                              }`} />
-                              <span className="text-sm font-medium">
-                                {doc.status === "completed" 
-                                  ? `${doc.plagiarismScore}% Match`
-                                  : "Analyzing..."}
-                              </span>
+                            <div className="flex items-center space-x-4 sm:space-x-6 w-full sm:w-auto justify-between sm:justify-end">
+                              <div className="flex-grow sm:flex-grow-0">
+                                <div className="flex items-center space-x-1">
+                                  <StatusIcon className={`h-4 w-4 ${
+                                    doc.status === "completed"
+                                      ? doc.plagiarismScore > 30
+                                        ? "text-red-600"
+                                        : "text-emerald-600"
+                                      : "text-blue-600"
+                                  }`} />
+                                  <span className="text-sm font-medium">
+                                    {doc.status === "completed" 
+                                      ? `${doc.plagiarismScore}% Match`
+                                      : "Analyzing..."}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex space-x-2 flex-shrink-0">
+                                {doc.status === "completed" && (
+                                  <Button
+                                    onClick={() => navigate(`/report/${doc.id}`)}
+                                    className="bg-emerald-600 text-white hover:bg-emerald-700"
+                                  >
+                                    <Eye className="h-4 w-4 mr-2 text-white" />
+                                    View Report
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="outline"
+                                  onClick={() => handleDeleteDocument(doc.id)}
+                                  className="border-slate-200 text-slate-700 hover:bg-slate-50"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex space-x-2 flex-shrink-0">
-                            {doc.status === "completed" && (
-                              <Button
-                                onClick={() => navigate(`/report/${doc.id}`)}
-                                className="bg-emerald-600 text-white hover:bg-emerald-700"
-                              >
-                                <Eye className="h-4 w-4 mr-2 text-white" />
-                                View Report
-                              </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              onClick={() => handleDeleteDocument(doc.id)}
-                              className="border-slate-200 text-slate-700 hover:bg-slate-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </motion.div>
+              </motion.div>
+            </TabsContent>
+            <TabsContent value="ai">
+              <AIContentDetector />
+            </TabsContent>
+          </Tabs>
         </main>
       </div>
     </>

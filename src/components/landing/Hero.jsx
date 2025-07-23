@@ -27,10 +27,10 @@ const Hero = ({ onDemoClick }) => {
           className="max-w-2xl"
         >
           <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl">
-            Ensure Academic Integrity with AI-Powered Plagiarism Detection
+            Ensure Academic Integrity with AI-Powered Plagiarism & AI Content Detection
           </h1>
           <p className="mt-6 text-lg leading-8 text-slate-300">
-            Our advanced AI technology helps you maintain academic honesty by detecting similarities across billions of sources, ensuring your work remains original and properly cited.
+            Our advanced AI technology helps you maintain academic honesty by detecting both plagiarism and AI-generated content. Check for copied or AI-written text across billions of sources, ensuring your work remains original and properly cited.
           </p>
           <div className="mt-10 flex items-center gap-x-6">
             <DialogTrigger asChild>

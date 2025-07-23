@@ -255,5 +255,29 @@ app.post('/api/delete-scans', async (req, res) => {
     }
 });
 
+// === AI Content Detection Endpoint ===
+app.post('/api/ai-content-detect', async (req, res) => {
+    try {
+        const { text } = req.body;
+        if (!text || typeof text !== 'string') {
+            return res.status(400).json({ error: 'Missing or invalid text field.' });
+        }
+        // Forward the text to the Python AI detector service
+        const response = await fetch('https://ai-detector-service.onrender.com/detect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text })
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            return res.status(500).json({ error: 'AI detector service error', details: errorText });
+        }
+        const result = await response.json();
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

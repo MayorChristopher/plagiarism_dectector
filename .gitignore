@@ -47,3 +47,5 @@ coverage/
 
 # Optional: Windows thumbnail cache
 *.stackdump
+
+ai-detector-service/

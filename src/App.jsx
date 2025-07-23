@@ -17,6 +17,7 @@ import Integrations from "@/pages/Integrations";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ErrorFallback from "@/pages/ErrorFallback";
 import Contact from "@/pages/Contact";
+import AIContentDetector from "@/components/ai/AIContentDetector";
 
 function App() {
   return (
@@ -82,6 +83,14 @@ function App() {
                 element={
                   <ProtectedRoute adminOnly>
                     <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/ai-content-detect"
+                element={
+                  <ProtectedRoute>
+                    <AIContentDetector />
                   </ProtectedRoute>
                 }
               />
