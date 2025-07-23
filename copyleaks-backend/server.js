@@ -6,7 +6,14 @@ const cors = require('cors');
 const crypto = require('crypto');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: [
+        'https://mouaupd.vercel.app', // your production frontend
+        'http://localhost:5173',      // your local dev (optional)
+        'http://localhost:3000'       // your local dev (optional)
+    ],
+    credentials: true
+}));
 app.use(express.json());
 const upload = multer();
 
