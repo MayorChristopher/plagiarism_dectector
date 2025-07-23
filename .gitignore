@@ -48,4 +48,8 @@ coverage/
 # Optional: Windows thumbnail cache
 *.stackdump
 
+# Ignore Python service and related files
 ai-detector-service/
+ai_detector_service.py
+__pycache__/
+*.pyc
