@@ -27,11 +27,25 @@ const AIContentDetector = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
       });
-      if (!res.ok) throw new Error('Failed to detect AI content');
       const data = await res.json();
+
+      // Check for HuggingFace rate limit error
+      if (data && data.status_code === 429) {
+        setError("AI detection temporarily unavailable due to rate limits. Please try again in an hour or upgrade your HuggingFace plan.");
+        setResult(null);
+        return;
+      }
+
+      // Other backend errors
+      if (data && data.error) {
+        setError(data.error);
+        setResult(null);
+        return;
+      }
+
       setResult(data);
     } catch (err) {
-      setError(err.message);
+      setError("Failed to connect to the AI detection service. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -111,11 +125,37 @@ const AIContentDetector = () => {
             </div>
           </form>
           {error && <div className="mt-6 text-red-600 text-base">{error}</div>}
-          {result && (
+          {result && !result.error && (
             <div className="mt-10 p-6 rounded-xl border bg-slate-50 max-w-lg mx-auto">
-              <div className="text-xl font-semibold mb-2">Result: <span className={result.result === 'AI-generated' ? 'text-red-600' : 'text-emerald-600'}>{result.result}</span></div>
-              <div className="text-base text-slate-700">AI Score: {(result.ai_score * 100).toFixed(1)}%</div>
-              <div className="text-base text-slate-700">Human Score: {(result.human_score * 100).toFixed(1)}%</div>
+              <div className="text-xl font-semibold mb-2">
+                Result: <span className={result.result === 'AI-generated' ? 'text-red-600' : 'text-emerald-600'}>
+                  {result.result}
+                </span>
+              </div>
+              <div className="text-base text-slate-700">
+                AI Score: {typeof result.ai_score === 'number' ? (result.ai_score * 100).toFixed(1) + '%' : 'N/A'}
+              </div>
+              <div className="text-base text-slate-700">
+                Human Score: {typeof result.human_score === 'number' ? (result.human_score * 100).toFixed(1) + '%' : 'N/A'}
+              </div>
+            </div>
+          )}
+          {result && result.error && (
+            <div className="mt-10 p-6 rounded-xl border bg-red-50 max-w-lg mx-auto text-red-600">
+              <div className="text-lg font-semibold mb-2">Error</div>
+              <div>{result.error}</div>
+              {result.status_code === 429 && (
+                <div>
+                  <br />
+                  <strong>AI detection temporarily unavailable due to rate limits. Please try again in an hour or upgrade your HuggingFace plan.</strong>
+                </div>
+              )}
+              {result.status_code === 404 && (
+                <div>
+                  <br />
+                  <strong>The AI detection model was not found. Please check the model name or use a different model.</strong>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
